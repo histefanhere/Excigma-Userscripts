@@ -120,6 +120,8 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 	// Helper functions
 	/** Converts a javascript Date object into an iCal date-time string in the format of `YYYYMMDDTHHMMSSZ` */
 	const toIcalDate = (date) => date.toISOString().replace(/[:\-]/g, '').split('.')[0] + 'Z';
+	/** Format YYYYMMDDTHHMMSS in local NZ time */
+	const toIcalDateTZ = (date) => date.toLocaleString('sv').replace(/[:\-]/g, '').replace(' ', 'T');
 	/** Removes duplicate whitespace in between and at ends of words */
 	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
 
@@ -150,8 +152,24 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 		`CREATED:${currentDate}`,
 		`LAST-MODIFIED:${currentDate}`,
 		`SEQUENCE:${Math.floor(Date.now() / 1000)}`,
-		"METHOD:PUBLISH"
+		"METHOD:PUBLISH",
+		"BEGIN:VTIMEZONE",
+		"TZID:New Zealand Standard Time",
+		"BEGIN:STANDARD",
+		"DTSTART:16010101T030000",
+		"TZOFFSETFROM:+1300",
+		"TZOFFSETTO:+1200",
+		"RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=1SU;BYMONTH=4",
+		"END:STANDARD",
+		"BEGIN:DAYLIGHT",
+		"DTSTART:16010101T020000",
+		"TZOFFSETFROM:+1200",
+		"TZOFFSETTO:+1300",
+		"RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=9",
+		"END:DAYLIGHT",
+		"END:VTIMEZONE"
 	];
+
 
 	// Loop through each "Class" in the "List View" timetable
 	for (const timetableRow of document.querySelectorAll(TIMETABLE_ROW_SELECTOR)) {
@@ -219,8 +237,8 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 				`SUMMARY:${summary}`,
 				`DESCRIPTION:${description}`,
 				`DTSTAMP:${currentDate}`,
-				`DTSTART:${toIcalDate(dtstart)}`,
-				`DTEND:${toIcalDate(dtend)}`,
+				`DTSTART;TZID=New Zealand Standard Time:${toIcalDateTZ(dtstart)}`,
+				`DTEND;TZID=New Zealand Standard Time:${toIcalDateTZ(dtend)}`,
 				`LOCATION:${roomMapping[location] ?? location}`,
 				// BYDAY=${meeting.rrule.byDay}; // Excluded because it messes up the days events are on?
 				`RRULE:FREQ=WEEKLY;UNTIL=${toIcalDate(until)}`,
